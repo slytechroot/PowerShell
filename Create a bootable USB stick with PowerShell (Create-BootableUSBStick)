@@ -1,0 +1,43 @@
+Creating a bootable USB stick could be a tricky task. You’ll need a tool (eg. the Windows 7 USB/DVD tool) or you have to struggle with those old cmd commands like bootsect.exe. This is now over, because I’ve created a PowerShell function for
+the community that automates all the steps you need for creating your Windows 10 or Windows Server bootable USB stick.
+
+Create-BootableUSBStick in Action 
+I want to show you first what we are going to achieve.
+
+Plug in your USB stick. Then mount the operating system iso file (Windows 7/8/10, Windows Server). Double check the drive letters. We’ll need them further on.
+
+In my case the USB stick is associated with E: and the ISO is mounted on F:. The following command sets up an bootable Windows USB stick:
+Create-BootableUSBStick -USBDriveLetter E: -ImageFiles F:
+
+How to use it
+Copy the code into your PowerShell ISE session and run the code. Then type the command and have fun with it. If you want to make the function permanent available, so that the function is there every time you start PowerShell, you
+have to create a folder in C:\Program Files\WindowsPowerShell\Modules. Name it Create-BootableUSBStick. Then save the code as a .psm1 file in that folder. The screenshot below will be a great help.
+
+#The Code
+function Create-BootableUSBStick {
+# .SYNOPSIS
+# Create-BootableUSBStick is an advanced PowerShell function to create a bootable USB stick for
+the installation of Windows OS.
+# .DESCRIPTION
+# The main idea is to avoid the use of 3rd party tools or tools like the Windows 7 USB tool.
+# .PARAMETER
+# USBDriveLetter
+# Mandatory. Provide the drive letter where your usb is connected
+# .PARAMETER
+# ImageFiles
+# Mandatory. Enter the drive letter of your mounted ISO (OS Files)
+# .EXAMPLE
+# Create-BootableUSBStick -USBDriveLetter F: -ImageFiles D:
+# .NOTES
+# Author:Patrick Gruenauer
+# Web:https://sid-500.com
+[CmdletBinding()]
+param(
+[Parameter()] $USBDriveLetter,
+[Parameter()] $ImageFiles)
+$USBDriveLetterTrim=$USBDriveLetter.Trim(':')
+Format-Volume -FileSystem NTFS -DriveLetter $USBDriveLetterTrim -Force
+bootsect.exe /NT60 $USBDriveLetter
+xcopy ($ImageFiles +'\') ($USBDriveLetter + '\') /e
+Invoke-Item $USBDriveLetter
+}
