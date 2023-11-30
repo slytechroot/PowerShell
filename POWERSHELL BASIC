@@ -1,0 +1,111 @@
+C1L1: Powershell Basics
+POWERSHELL BASIC
+
+VMs for this course
+
+    https://s3.amazonaws.com/infosecaddictsvirtualmachines/Win7x64.zip
+
+username: workshop
+
+ password: password
+
+    https://s3.amazonaws.com/infosecaddictsvirtualmachines/Ubuntu-17-10-InfoSecAddictsVM.zip
+
+user:      infosecaddicts
+
+pass:      infosecaddicts
+
+You don’t have to, but you can do the updates in the Win7 VM (yes, it is a lot of updates).
+
+You’ll need to create directory in the Win7 VM called “c:\ps”
+
+In this file, you will also need to change the text ‘192.168.11.129’ to the IP address of your Ubuntu host.
+
+If you are interested in running PowerShell on Mac OS X, or Linux you can check out the following link:
+
+    https://www.howtogeek.com/267858/how-to-install-microsoft-powershell-on-linux-or-os-x/
+
+Powershell Basics
+
+PowerShell is Microsoft’s new scripting language that has been built in since the release Vista.
+
+PowerShell file extension end in .ps1 .
+
+An important note is that you cannot double-click on a PowerShell script to execute it.
+
+To open a PowerShell command prompt either hit Windows Key + R and type in PowerShell or Start -> All Programs -> Accessories -> Windows PowerShell -> Windows PowerShell.
+
+    cd c:\
+    dir
+    cd
+    ls
+
+ 
+
+To obtain a list of cmdlets, use the Get-Command cmdlet
+
+    Get-Command
+
+ 
+
+You can use the Get-Alias cmdlet to see a full list of aliased commands.
+
+    Get-Alias
+
+ 
+
+Don’t worry you won’t blow up your machine with Powershell
+
+    Get-Process | stop-process              Don't press [ ENTER ] What will this command do?
+    Get-Process | stop-process -whatif
+
+ 
+
+To get help with a cmdlet, use the Get-Help cmdlet along with the cmdlet you want information about.
+
+    Get-Help Get-Command
+    Get-Help Get-Service –online
+    Get-Service -Name TermService, Spooler
+    Get-Service –N BITS
+
+ 
+
+Run cmdlet through a pie and refer to its properties as $_
+
+    Get-Service | where-object {  $_.Status -eq "Running"}
+
+ 
+
+PowerShell variables begin with the $ symbol. First let’s create a variable
+
+    $serv = Get-Service –N Spooler
+
+ 
+
+To see the value of a variable you can just call it in the terminal.
+
+    $serv
+    $serv.gettype().fullname
+
+ 
+
+Get-Member is another extremely useful cmdlet that will enumerate the available methods and properties of an object. You can pipe the object to Get-Member or pass it in
+
+    $serv | Get-Member
+    Get-Member -InputObject $serv
+
+ 
+
+Let’s use a method and a property with our object.
+
+    $serv.Status
+    $serv.Stop()
+    $serv.Refresh()
+    $serv.Status
+    $serv.Start()
+    $serv.Refresh()
+    $serv.Status
+
+If you want some good command-line shortcuts you can check out the following link:
+
+    https://technet.microsoft.com/en-us/library/ff678293.aspx
