@@ -1,0 +1,229 @@
+ PowerShell commands any IT professional MUST know
+
+ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Force
+dir . | Unblock-File
+Import-Module .\Microsoft.PowerApps.Administration.PowerShell.psm1 -Force
+Import-Module .\Microsoft.PowerApps.PowerShell.psm1 -Force
+Add-PowerAppsAccount
+
+#############
+Display a list of all environments
+Get-AdminEnvironment
+
+This returns a list of each environment across your tenant, with details of each (e.g., environment name (guid), display name, location, creator, etc).
+
+ 
+Display details of your default environment
+Get-AdminEnvironment –Default
+
+Returns the details for only the default environment of the tenant.
+
+ 
+Display details of a specific environment
+Get-AdminEnvironment –EnvironmentName ‘EnvironmentName’
+
+##################
+Common entries (just to get started)
+
+1. Navigate the Windows Registry like the file system:
+cd hkcu:
+
+2. Search recursively for a certain string within files:
+dir –r | select string "searchforthis"
+
+3. Find the five processes using the most memory:
+ps | sort –p ws | select –last 5
+
+4. Cycle a service (stop, and then restart it) like DHCP:
+Restart-Service DHCP
+
+5. List all items within a folder:
+Get-ChildItem – Force
+
+6. Recurse over a series of directories or folders:
+Get-ChildItem –Force c:\directory –Recurse
+
+7. Remove all files within a directory without being prompted for each:
+Remove-Item C:\tobedeleted –Recurse
+
+8. Restart the current computer:
+(Get-WmiObject -Class Win32_OperatingSystem -ComputerName .).Win32Shutdown(2)
+Collecting information
+
+9. Get information about the make and model of a computer:
+Get-WmiObject -Class Win32_ComputerSystem
+
+10. Get information about the BIOS of the current computer:
+Get-WmiObject -Class Win32_BIOS -ComputerName .
+
+11. List installed hotfixes -- QFEs, or Windows Update files:
+Get-WmiObject -Class Win32_QuickFixEngineering -ComputerName .
+
+12. Get the username of the person currently logged on to a computer:
+Get-WmiObject -Class Win32_ComputerSystem -Property UserName -ComputerName .
+
+13. Find just the names of installed applications on the current computer:
+Get-WmiObject -Class Win32_Product -ComputerName . | Format-Wide -Column 1
+
+14. Get IP addresses assigned to the current computer:
+Get-WmiObject -Class Win32_NetworkAdapterConfiguration -Filter IPEnabled=TRUE -ComputerName . | Format-Table -Property IPAddress
+
+15. Get a more detailed IP configuration report for the current machine:
+Get-WmiObject -Class Win32_NetworkAdapterConfiguration -Filter IPEnabled=TRUE -ComputerName . | Select-Object -Property [a-z]* -ExcludeProperty IPX*,WINS*
+
+16. Find network cards with DHCP enabled on the current computer:
+Get-WmiObject -Class Win32_NetworkAdapterConfiguration -Filter "DHCPEnabled=true" -ComputerName .
+
+17. Enable DHCP on all network adapters on the current computer:
+Get-WmiObject -Class Win32_NetworkAdapterConfiguration -Filter IPEnabled=true -ComputerName . | ForEach-Object -Process {$_.EnableDHCP()}
+Software management
+
+18. Install an MSI package on a remote computer:
+(Get-WMIObject -ComputerName TARGETMACHINE -List | Where-Object -FilterScript {$_.Name -eq "Win32_Product"}).Install(\\MACHINEWHEREMSIRESIDES\path\package.msi)
+
+19. Upgrade an installed application with an MSI-based application upgrade package:
+(Get-WmiObject -Class Win32_Product -ComputerName . -Filter "Name='name_of_app_to_be_upgraded'").Upgrade(\\MACHINEWHEREMSIRESIDES\path\upgrade_package.msi)
+
+20. Remove an MSI package from the current computer:
+(Get-WmiObject -Class Win32_Product -Filter "Name='product_to_remove'" -ComputerName . ).Uninstall()
+Machine management
+
+21. Remotely shut down another machine after one minute:
+Start-Sleep 60; Restart-Computer –Force –ComputerName TARGETMACHINE
+
+22. Add a printer:
+(New-Object -ComObject WScript.Network).AddWindowsPrinterConnection("\\printerserver\hplaser3")
+
+23. Remove a printer:
+(New-Object -ComObject WScript.Network).RemovePrinterConnection("\\printerserver\hplaser3 ")
+
+24. Enter into a remote PowerShell session -- you must have remote management enabled:
+enter-pssession TARGETMACHINE
+
+25. Use the PowerShell invoke command to run a script on a remote servers:
+invoke-command -computername machine1, machine2 -filepath c:\Script\script.ps1
+
+Bonus command
+
+To dismiss a process you can use the process ID or the process name. The -processname switch allows the use of wildcards. Here's how to stop the calculator:
+Stop-Process -processname calc*
+
+######################
+
+
+If the current console is not elevated and the operation you're trying to do requires elevated privileges then you can start powershell with the "Run as administrator" option
+
+PS> Start-Process powershell -Verb runAs
+
+############
+You can create a batch file (*.bat) that runs your powershell script with administrative privileges when double-clicked. In this way, you do not need to change anything in your powershell script.To do this, create a batch file with the same name and location of your powershell script and then put the following content in it:
+
+
+@echo off
+
+set scriptFileName=%~n0
+set scriptFolderPath=%~dp0
+set powershellScriptFileName=%scriptFileName%.ps1
+
+powershell -Command "Start-Process powershell \"-ExecutionPolicy Bypass -NoProfile -NoExit -Command `\"cd \`\"%scriptFolderPath%\`\"; & \`\".\%powershellScriptFileName%\`\"`\"\" -Verb RunAs"
+
+#################
+
+Import-Module "C:\Program Files\Microsoft Dynamics NAV\90\Service\NavAdminTool.ps1"
+
+net localgroup administrators
+or
+invoke-command [net localgroup administrators] -comp chi-fp01
+
+get-netlocalgroup -group "remote desktop users" -computername $sessions
+
+
+cmdlet:
+get-help update
+
+##########
+Check for the presence of patches with PowerShell
+Get-Hotfix –id KB4012212
+Get-Hotfix –id KB4012217,KB4015551,KB4019216
+
+You can also execute the command against remote computers by using the –ComputerName parameter:
+Get-Hotfix –id KB4012212 –computername Jon-Desktop
+
+Disable vulnerable versions of SMB with PowerShell
+On Windows 8 and Windows Server 2012 systems, there is a built-in cmdlet that deals with the SMB versions present and in operation on any given machine. It is called Set-SMBServerConfiguration. You probably will not need to use this very often, so I will just give you the command you need to turn SMB1 off:
+Set-SmbServerConfiguration -EnableSMB1Protocol $false
+
+For Windows 8.1, Windows 10, Windows Server 2012 R2 and Windows Server 2016 systems, run the following command instead:
+Disable-WindowsOptionalFeature -Online -FeatureName SMB1Protocol
+
+################
+Now imagine that you want to create an HTML report that lists the name of each service along with its status (regardless of whether the service is running). To do so, you could use the following command:
+Get-Service | ConvertTo-HTML -Property Name, Status > C:\services.htm
+
+For example, to export the list of system services to a CSV file, you could use the following command:
+Get-Service | Export-CSV c:\service.csv
+
+For example, to create a CSV file containing the name of each system service and its status, you could use the following command:
+Get-Service | Select-Object Name, Status | Export-CSV c:\service.csv
+
+For example, to see the Application log, you could use the following command:
+Get-EventLog -Log "Application"
+
+You can terminate a process based on its name or on its process ID. For example, you could terminate Notepad by using one of the following commands:
+Stop-Process -Name notepad<br> Stop-Process -ID 2668
+################
+Data acquisition: Checking running services on a PC
+Get-Service | Where-Object {$_.status -eq "running"}
+or:
+Get-Service | Where-Object {$_.status -eq "running"} | Sort-Object DisplayName
+
+
+Troubleshooting: Searching event log for system errors
+For example, if you want to take a look at the error messages in the “System” event display, enter the following:
+Get-EventLog System | Where-Object {$_.entryType -Match "Error"}
+
+Get-EventLog System -Newest 100 | Where-Object {$_.entryType -Match "Error"}
+
+Remote management: Controlling services on remote computers
+Get-WmiObject Win32_Bios -Computername
+
+
+You can now access the internal system settings of the third-party computer remotely. The following example shows how to retrieve the methods of the Windows Update Client service to find out which cmdlets can be used to start, stop, and restart it:
+Get-WmiObject -Computername -Class Win32_Service -Filter "Name='wuauserv'"
+
+##################
+Say, for instance, you wanted to know how the Get-Service command works, you can use the Get-Help command like so:
+Powershell
+
+Get-Help -Name Get-Service
+
+But Get-Help does even more. Say you want to find a list of all commands. You'd enter the following:
+
+Get-Help *
+
+Unlock AD account:
+Unlock-ADAccount [-Identity] <ADAccount> [-AuthType <ADAuthType> {Negotiate | Basic} ] [-Credential ,PSCr
+
+So, rather than entering all of the variables noted up top, you could just enter the following:
+Powershell
+
+Unlock-ADAccount -identity
+
+For identity, you'll either enter the Active Directory distinguished name, the GUID, security identifier, or SAM account name for the account in question.
+
+Set-ADAccountPassword [-Identity] <ADAccount> [-AuthType {<Negotiate> | <Basic>}] [-Credential <PSCredential>] [-NewPassword <SecureString>] [-OldPassword <SecureString>] [-Partition <string>] [-PassThru <switch>] [-Reset <switch>] [-Server <string>] [-Confirm] [-WhatIf] [<CommonParameters>]
+
+If you were to enter Get-ADUser –Filter {Name –like “Martin*”}, for instance, you'd find every user with the first name Martin in your Active Directory.
+
+Get-eventlog security -newest 100 |
+where {$_.entrytype -eq "failureAudit"}
+
+get-service
+
+get-process
+
+stop-process
+
+Set-ExecutionPolicy Unrestricted
+
+##########################
