@@ -1,0 +1,22 @@
+Get-Item <file> | Get-Content -Stream Zone.Identifier
+Powershell way to ident the zone id in the alternate data stream of a file
+
+################
+
+Get-CimInstance -ClassName Win32OperatingSystem | Select-Object -Property CSName, Caption, Version, BuildNumber, BuildType, OSType, RegisteredUser, OSArchitecture, ServicePackMajorVersion
+
+Get-Service | Where-Object { $.Status -eq "Running" }
+
+gcim - alias for Get-CimInstance
+
+Get-Alias shows all aliases available
+
+A Powershell function, unlike a cmdlet is not pre-compiled in .Net
+Functions are stored as local modules
+
+Use ISE to create a custom funcion
+Use Import-Module to load it into Powershell
+Carrie Roberts class on Powershell
+
+##############
+
