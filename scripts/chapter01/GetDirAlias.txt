@@ -1,0 +1,5 @@
+PS C:\> Get-Alias dir
+
+CommandType     Name                                                Definition
+-----------     ----                                                ----------
+Alias           dir                                                 Get-ChildItem

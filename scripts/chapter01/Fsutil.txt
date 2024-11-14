@@ -1,0 +1,15 @@
+PS C:\Users\edwils> sl c:\mytest
+PS C:\mytest> fsutil file createNew c:\mytest\myNewFile.txt 1000
+File c:\mytest\myNewFile.txt is created
+PS C:\mytest> dir
+
+
+    Directory: Microsoft.PowerShell.Core\FileSystem::C:\mytest
+
+
+Mode                LastWriteTime     Length Name
+----                -------------     ------ ----
+-a---          5/8/2007   7:30 PM       1000 myNewFile.txt
+
+
+PS C:\mytest>

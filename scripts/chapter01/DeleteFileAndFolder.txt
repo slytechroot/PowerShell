@@ -1,0 +1,20 @@
+PS C:\> sl c:\mytest
+PS C:\mytest> dir
+
+
+    Directory: Microsoft.PowerShell.Core\FileSystem::C:\mytest
+
+
+Mode                LastWriteTime     Length Name
+----                -------------     ------ ----
+-a---          5/8/2007   7:30 PM       1000 myNewFile.txt
+
+
+PS C:\mytest> del *.txt
+PS C:\mytest> cd c:\
+PS C:\> rd c:\mytest
+PS C:\> dir c:\mytest
+Get-ChildItem : Cannot find path 'C:\mytest' because it does not exist.
+At line:1 char:4
++ dir  <<<< c:\mytest
+PS C:\>

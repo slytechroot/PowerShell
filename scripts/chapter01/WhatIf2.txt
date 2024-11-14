@@ -1,0 +1,7 @@
+PS C:\Users\edwils> New-Item -Name myNewTest -Path c:\ -ItemType directory -WhatIf
+What if: Performing operation "Create Directory" on Target "Destination: C:\myNewTest".
+
+PS C:\Users\edwils> get-help Get-Process -whatif
+Get-Help : A parameter cannot be found that matches parameter name 'whatif'.
+At line:1 char:28
++ get-help Get-Process -whatif <<<<

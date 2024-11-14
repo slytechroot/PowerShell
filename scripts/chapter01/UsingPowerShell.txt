@@ -1,0 +1,23 @@
+PS C:\Users\edwils> dir
+
+
+    Directory: Microsoft.PowerShell.Core\FileSystem::C:\Users\edwils
+
+
+Mode                LastWriteTime     Length Name
+----                -------------     ------ ----
+d-r--        11/29/2006   1:32 PM            Contacts
+d-r--          4/2/2007  12:51 AM            Desktop
+d-r--          4/1/2007   6:53 PM            Documents
+d-r--        11/29/2006   1:32 PM            Downloads
+d-r--          4/2/2007   1:10 AM            Favorites
+d-r--          4/1/2007   6:53 PM            Links
+d-r--        11/29/2006   1:32 PM            Music
+d-r--        11/29/2006   1:32 PM            Pictures
+d-r--        11/29/2006   1:32 PM            Saved Games
+d-r--          4/1/2007   6:53 PM            Searches
+d-r--          4/2/2007   5:53 PM            Videos
+
+
+PS C:\Users\edwils> cd music
+PS C:\Users\edwils\Music> dir
