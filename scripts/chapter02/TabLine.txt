@@ -1,0 +1,11 @@
+this file is used with the regExTab.ps1 script
+	IT CAN, of course, be used with other scripts as well.
+
+
+	to find new lines
+
+Once we find the new lines that are present
+
+	we will generate a Match.
+
+In this way it is a useful file.
