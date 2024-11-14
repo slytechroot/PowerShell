@@ -1,0 +1,7 @@
+getWMI function in profile
+
+function getWMI($str)
+ { 
+   Write-Host "The following are $str wmi classes"
+   get-wmiobject -list | ? { $_.name -LIKE "*$str*" }
+ }

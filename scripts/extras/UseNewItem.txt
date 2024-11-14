@@ -1,0 +1,4 @@
+
+New-Item -Path variable:\ -Name mred -value coolDude -ItemType variable
+
+netsh firewall show config | Out-File C:\mytest\myFireWallConfig.txt

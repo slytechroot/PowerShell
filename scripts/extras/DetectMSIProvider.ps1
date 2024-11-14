@@ -1,0 +1,1 @@
+Get-WmiObject  __provider | where { $_.name -like "*msi*" } | Format-List name
