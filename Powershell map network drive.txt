@@ -1,0 +1,41 @@
+$net = new-object -ComObject WScript.Network
+$net.MapNetworkDrive("u:", "\\server\share", $false, "domain\user", "password")
+
+#####
+
+$net = $(New-Object -ComObject WScript.Network);
+$net.MapNetworkDrive("p:", "\\papabox\files");
+
+$net = $(New-Object -ComObject WScript.Network);
+$net.MapNetworkDrive("q:", "\\quebecbox\files");
+
+## problem -- this one does not work because my username/password
+## is different on romeobox
+$net = $(New-Object -ComObject WScript.Network);
+$net.MapNetworkDrive("r:", "\\romeobox\files");
+
+#####
+
+$net = new-object -ComObject WScript.Network
+$net.MapNetworkDrive("r:", "\\romeobox\files", $false, "domain\user", "password")
+
+
+#####
+
+net use S: \\netdrive1\space1 pwd /user:oneUser
+
+#####
+
+set WshShell = WScript.CreateObject("WScript.Shell")
+Set objNetwork = CreateObject("WScript.Network")
+do while true
+  objNetwork.MapNetworkDrive "S:", "\\netdrive1\space1", false, "oneUser", "pwd"
+  WScript.Sleep(12000)
+loop
+
+#####
+net use S: \\netdrive1\space1 pwd /user:oneUser /persistent:yes
+
+####
+
+
