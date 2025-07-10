@@ -1,0 +1,6 @@
+https://helloitsliam.com/2018/03/21/obfuscating-powershell-commands/
+https://helloitsliam.com/2018/03/21/invoke-obfuscation/
+
+
+
+
